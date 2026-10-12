@@ -82,7 +82,7 @@ for root, _, files in os.walk("flutter/lib"):
         p = os.path.join(root, name)
         with open(p, encoding="utf-8") as f:
             s = f.read()
-        n = re.sub(r"https://rustdesk\.com[^'\"]*", SITE, s)
+        n = re.sub(r"https://rustdesk\.com[^'\"\s)]*", SITE, s)
         if n != s:
             with open(p, "w", encoding="utf-8", newline="") as f:
                 f.write(n)
