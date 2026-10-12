@@ -109,7 +109,8 @@ jobs:
         with:
           version: ${{ env.LLVM_VERSION }}
 
-      - uses: subosito/flutter-action@v2
+      # Mesma versão do CI oficial (as mais novas instalam em outra pasta).
+      - uses: subosito/flutter-action@2783a3f08e1baf891508463f8c6653c258246225 # v2.12.0
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -121,7 +122,9 @@ jobs:
           flutter precache --windows
           Invoke-WebRequest -Uri https://github.com/rustdesk/engine/releases/download/main/windows-x64-release.zip -OutFile windows-x64-release.zip
           Expand-Archive -Path windows-x64-release.zip -DestinationPath windows-x64-release
-          mv -Force windows-x64-release/* C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/
+          $root = Split-Path (Split-Path (Get-Command flutter).Source)
+          Write-Host "Flutter em $root"
+          mv -Force windows-x64-release/* "$root/bin/cache/artifacts/engine/windows-x64-release/"
 
       - name: Ajuste do Flutter
         shell: bash
@@ -160,11 +163,28 @@ jobs:
           VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static
         run: |
           mkdir -p /c/vcpkg-cache
-          $VCPKG_ROOT/vcpkg install --triplet x64-windows-static --x-install-root="$VCPKG_ROOT/installed"
+          set +e
+          $VCPKG_ROOT/vcpkg install --triplet x64-windows-static --x-install-root="$VCPKG_ROOT/installed" > ../vcpkg.log 2>&1
+          rc=$?
+          tail -n 30 ../vcpkg.log
+          if [ $rc -ne 0 ]; then
+            for f in $(find "$VCPKG_ROOT/buildtrees" -name "*-err.log" -size +0 | head -3); do echo "::error title=$f::$(tail -n 25 "$f" | sed ':a;N;$!ba;s/\n/%0A/g')"; done
+            echo "::error title=vcpkg::$(tail -n 40 ../vcpkg.log | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit $rc
+          fi
 
       - name: Compilar
+        shell: bash
         run: |
-          python3 .\build.py --portable --flutter --skip-portable-pack --hwcodec --vram
+          set +e
+          python3 ./build.py --portable --flutter --skip-portable-pack --hwcodec --vram > ../build.log 2>&1
+          rc=$?
+          tail -n 40 ../build.log
+          if [ $rc -ne 0 ]; then
+            grep -n "error" ../build.log | tail -n 15 | sed ':a;N;$!ba;s/\n/%0A/g' | sed 's/^/::error title=erros::/'
+            echo "::error title=fim do log::$(tail -n 40 ../build.log | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit $rc
+          fi
           mv ./flutter/build/windows/x64/runner/Release ./rustdesk
 
       - name: Recursos do .exe (Runner.res)
