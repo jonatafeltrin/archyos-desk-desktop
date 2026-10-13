@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>ArchyOs</title>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <options customize="never" require-scripts="true" hostArchitectures="arm64"/>
+    <domains enable_localSystem="true" enable_currentUserHome="false" enable_anywhere="false"/>
+    <choices-outline><line choice="default"><line choice="archyos"/></line></choices-outline>
+    <choice id="default"/>
+    <choice id="archyos" visible="false"><pkg-ref id="br.com.archyos.desk.pkg"/></choice>
+    <pkg-ref id="br.com.archyos.desk.pkg" version="__VERSION__" onConclusion="none">archyos.pkg</pkg-ref>
+</installer-gui-script>
