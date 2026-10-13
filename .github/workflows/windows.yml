@@ -186,6 +186,8 @@ jobs:
             exit $rc
           fi
           mv ./flutter/build/windows/x64/runner/Release ./rustdesk
+          # O serviço instalado procura "<nome do app>.exe"
+          mv ./rustdesk/rustdesk.exe ./rustdesk/ArchyOs.exe
 
       - name: Recursos do .exe (Runner.res)
         continue-on-error: true
@@ -200,7 +202,7 @@ jobs:
           sed -i '/dpiAware/d' res/manifest.xml
           pushd ./libs/portable
           pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/ArchyOs.exe
           popd
           mkdir -p ../out
           mv ./target/release/rustdesk-portable-packer.exe ../out/ArchyOs-motor-${{ env.RUSTDESK_TAG }}-x64.exe
